@@ -11,7 +11,7 @@ namespace esphome {
 
       static const uint16_t CMD_OFF = 0xF708;
 
-      constexpr static const uint16_t CMDS_COOL[] = {
+      constexpr static const uint16_t CMDS_WARM[] = {
           0xA758,
           0xA55A,
           0xA35C,
@@ -24,7 +24,7 @@ namespace esphome {
           0x956A,
       };
 
-      constexpr static const uint16_t CMDS_WARM[] = {
+      constexpr static const uint16_t CMDS_COOL[] = {
           0x936C,
           0x916E,
           0x8F70,
@@ -59,7 +59,7 @@ namespace esphome {
       // static const uint16_t CMD_WARM_LVL_9  = 0x837C;
       // static const uint16_t CMD_WARM_LVL_10 = 0x817E;
 
-      static const int COMMAND_DELAY = 255;
+      static const int COMMAND_DELAY = 500;
 
       light::LightTraits SaraLightOutput::get_traits() {
           auto traits = light::LightTraits();
@@ -93,16 +93,16 @@ namespace esphome {
               SaraLightOutput::color_level color_level = select_color_level_(ct_mireds);
               SaraLightOutput::brightness_levels brightness_levels = select_brightness_levels_(brightness, color_level);
 
-              ESP_LOGD(TAG, "Selected levels: warm brightness=%d cool brightness=%d, color_temperature=%d",
-                       brightness_levels.warm, brightness_levels.cool, color_level);
+              ESP_LOGD(TAG, "Selected levels: color=%d => warm brightness=%d cool brightness=%d",
+                       color_level, brightness_levels.warm, brightness_levels.cool);
 
               uint16_t cool_cmd = CMDS_COOL[brightness_levels.cool];
-              uint16_t warm_cmd = CMDS_COOL[brightness_levels.warm];
+              uint16_t warm_cmd = CMDS_WARM[brightness_levels.warm];
 
 
-              send_command_(cool_cmd);
-              delay(COMMAND_DELAY);
               send_command_(warm_cmd);
+              delay(COMMAND_DELAY);
+              send_command_(cool_cmd);
           }
       }
 
@@ -117,7 +117,7 @@ namespace esphome {
       static const float CT_THRESHOLDS[] = { 160, 174, 208, 294 };
 
       SaraLightOutput::color_level SaraLightOutput::select_color_level_(float mired_val) {
-          for(int i = 0; i < (sizeof(CT_THRESHOLDS) / sizeof(CT_THRESHOLDS[0])); ++i) {
+          for(int i = CT_COOL; i < CT_WARM; ++i) {
               if (mired_val < CT_THRESHOLDS[i]) {
                   return (color_level) i;
               }
@@ -126,7 +126,7 @@ namespace esphome {
       }
 
       SaraLightOutput::brightness_levels SaraLightOutput::select_brightness_levels_(float brightness_val, SaraLightOutput::color_level color) {
-          float cool_brightness_val, warm_brightness_val = 1.0;
+          float cool_brightness_val = 1.0, warm_brightness_val = 1.0;
           brightness_levels levels;
 
           switch (color) {
@@ -137,15 +137,19 @@ namespace esphome {
           case CT_COOLER:
               cool_brightness_val = brightness_val;
               warm_brightness_val = brightness_val / 2.0;
+              break;
           case CT_WHITE:
               cool_brightness_val = brightness_val;
-              warm_brightness_val = brightness_val / 2.0;
+              warm_brightness_val = brightness_val;
+              break;
           case CT_WARMER:
               cool_brightness_val = brightness_val / 2.0;
               warm_brightness_val = brightness_val;
+              break;
           case CT_WARM:
               cool_brightness_val = 0;
               warm_brightness_val = brightness_val;
+              break;
           };
 
           levels.cool = round_brightness_level_(cool_brightness_val);

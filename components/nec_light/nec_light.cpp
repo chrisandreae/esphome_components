@@ -154,7 +154,8 @@ namespace esphome {
 
     void NecLightOutput::send_command_(uint16_t command) {
       if (channel_ == 2) {
-        command |= 0x80;
+        command |= 0x8000;
+        command &= ~0x0080;
       }
       send_nec_(ADDR, command);
     }

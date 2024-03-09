@@ -162,7 +162,7 @@ namespace esphome {
 
     void NecLightOutput::send_nec_(uint16_t address, uint16_t command) {
       auto transmit = this->emitter_->transmit();
-      remote_base::NECData data{address, command};
+      remote_base::NECData data{address, command, 1};
       remote_base::NECProtocol().encode(transmit.get_data(), data);
       transmit.perform();
     }

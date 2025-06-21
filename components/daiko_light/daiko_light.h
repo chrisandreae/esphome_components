@@ -22,17 +22,17 @@ namespace esphome {
         CT_WARM = 10,
       };
 
-      // The brightness extended command allows values from 19 to 127; 0 through
-      // 18 are unknown other commands
+      // Light has 10 selectable brightness levels (byte2 commands 19 through 28)
       enum brightness_level {
         BRT_UNKNOWN = -1,
-        BRT_MIN = 19,
-        BRT_MAX = 127
+        BRT_MIN = 0,
+        BRT_MAX = 9
       };
 
       color_level select_color_level_(float mired_val);
-      brightness_level select_brightness_level_(float brightness_val);
+      brightness_level select_brightness_level_(float brightness_val, color_level color_level);
       void send_command_(uint8_t command, uint8_t command2 = 0);
+      void send_encoded_command_(uint16_t command, uint16_t command2 = 0);
 
       esphome::remote_transmitter::RemoteTransmitterComponent *emitter_{nullptr};
       uint8_t channel_ { 1 };
